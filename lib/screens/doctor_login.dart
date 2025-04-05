@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'auth_service.dart';
 import 'doctor_signup.dart';
-import 'selection_page.dart'; // Import SelectionPage
+import 'selection_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'doctor_page.dart';
 
 class DoctorLoginPage extends StatefulWidget {
   @override
@@ -32,7 +34,6 @@ class _DoctorLoginPageState extends State<DoctorLoginPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Back Button
                   Align(
                     alignment: Alignment.topLeft,
                     child: IconButton(
@@ -45,37 +46,26 @@ class _DoctorLoginPageState extends State<DoctorLoginPage> {
                       },
                     ),
                   ),
-                  // Logo
                   Image.asset('assets/logoname.png', height: 120),
                   const SizedBox(height: 30),
 
-                  // Email Field
                   _buildTextField(emailController, 'Email', Icons.email, false),
                   const SizedBox(height: 16),
 
-                  // Password Field
                   _buildTextField(passwordController, 'Password', Icons.lock, true),
                   const SizedBox(height: 20),
 
-                  // Error Message
                   if (errorMessage.isNotEmpty) _errorMessageWidget(),
 
-                  // Login Button
                   _buildLoginButton(),
-
                   const SizedBox(height: 12),
 
-                  // Forgot Password
                   TextButton(
-                    onPressed: () {
-                      // Handle Forgot Password
-                    },
+                    onPressed: () {},
                     child: const Text('Forgot Password?', style: TextStyle(color: Colors.white70)),
                   ),
-
                   const SizedBox(height: 10),
 
-                  // Don't have an account? Sign Up
                   TextButton(
                     onPressed: () {
                       Navigator.push(
@@ -97,7 +87,6 @@ class _DoctorLoginPageState extends State<DoctorLoginPage> {
     );
   }
 
-  // **Reusable Widgets**
   Widget _buildTextField(
       TextEditingController controller, String hintText, IconData icon, bool isPassword) {
     return Container(
@@ -144,19 +133,24 @@ class _DoctorLoginPageState extends State<DoctorLoginPage> {
   Widget _buildLoginButton() {
     return ElevatedButton(
       onPressed: () async {
-        String? message = await authService.signIn(
-          emailController.text.trim(),
-          passwordController.text.trim(),
-        );
-
-        if (message == null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => SelectionPage()),
+        try {
+          UserCredential userCredential = await FirebaseAuth.instance
+              .signInWithEmailAndPassword(
+            email: emailController.text.trim(),
+            password: passwordController.text.trim(),
           );
-        } else {
+
+          User? user = userCredential.user;
+
+          if (user != null) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => DoctorPage(user: user)),
+            );
+          }
+        } catch (e) {
           setState(() {
-            errorMessage = message;
+            errorMessage = "Login failed. Check your credentials.";
           });
         }
       },
